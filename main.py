@@ -47,7 +47,7 @@ class BetIn(BaseModel):
 class BetOut(BaseModel):
     amount: int
     with_: str | None = None
-    date: datetime
+    date: datetime | None = None
     user_id: str
     id: str
     in_bet: bool | None=None
@@ -158,11 +158,9 @@ async def get_bets(current_user:Annotated[UserInDb, Depends(get_current_user)])-
     print(data)
     for bet in data:
         bet['id']=str(bet['_id'])
-        bet['with_']=str(bet['with_'])
+        bet['with_']=str(bet.get('with_'))
         bet['user_id']=str(bet['user_id'])
         del bet['_id']
-        del bet['with_']
-        del bet['user_id']
     return data
 
 @app.get("/api/v1/bets/{bet_id}")
