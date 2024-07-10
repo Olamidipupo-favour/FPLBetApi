@@ -63,10 +63,14 @@ async def check_fpl_winners():
             if user_score > with_score:
                 print("User wins the bet")
                 await collection.update_one({"_id": ObjectId(bet['_id'])}, {"$set": {"in_bet": False}})
+                #remove the amount from with_
+                await db.users.update_one({"_id": ObjectId(with_)}, {"$inc": {"balance": -bet["amount"]}})
                 await db.users.update_one({"_id": ObjectId(user_id)}, {"$inc": {"balance": bet["amount"]}})
             elif user_score < with_score:
                 print("With wins the bet")
                 await collection.update_one({"_id": ObjectId(bet['_id'])}, {"$set": {"in_bet": False}})
+                #remove the amount from user
+                await db.users.update_one({"_id": ObjectId(user_id)}, {"$inc": {"balance": -bet["amount"]}})
                 await db.users.update_one({"_id": ObjectId(with_)}, {"$inc": {"balance": bet["amount"]}})
             else:
                 print("Tie")
