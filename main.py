@@ -36,10 +36,28 @@ class UserInDb(BaseModel):
     name: str
     email: EmailStr
     fpl_id: str
-    _id: str
+    id: str
+    balance: int | None=None
 
 class TokenData(BaseModel):
     email: str
+
+class BetIn(BaseModel):
+    amount: int
+    with_: str
+class BetOut(BaseModel):
+    message: str
+    amount: int
+    with_: str | None = None
+    date: datetime
+    user_id: str
+
+
+class Topup(BaseModel):
+    amount: int
+
+class TopupOut(BaseModel):
+    message: str
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
@@ -105,40 +123,49 @@ async def register(user:RegisterIn) -> Any:
     return user
 
 @app.post("/api/v1/topup")
-async def topup():
-    return {"message": "Hello World"}
+async def topup(topup_data:Topup,current_user:Annotated[UserInDb, Depends(get_current_user)],response_model=TopupOut):
+    amount = int(topup_data.amount)
+    user_id=current_user.id
+    initial_amount=int(client.BetTest.bet.users.find_one({"_id":ObjectId(user_id)}).get("balance",0))
+    client.BetTest.bet.users.update_one({"_id":ObjectId(user_id)}, {"$set": {"balance": initial_amount+amount}})
+    return TopupOut(message=f"Topped up from {initial_amount} to {initial_amount+amount}")
 
 @app.get("/api/v1/user")
 async def get_users(current_user:Annotated[UserInDb, Depends(get_current_user)]):
-    #DEFINE models later on.
     return current_user
 
 @app.get("/api/v1/users")
-async def get_users():
+async def get_users(current_user:Annotated[UserInDb, Depends(get_current_user)]):
     #DEFINE models later on.
-    return {"message": "Hello World"}
+    data=list(client.BetTest.bet.users.find())
+    for user in data:
+        user['id']=str(user['_id'])
+    return data
 
 @app.get("/api/v1/users/{user_id}")
-async def get_user(user_id:str):
+async def get_user(user_id:str,current_user:Annotated[UserInDb, Depends(get_current_user)]):
     #DEFINE models later on.
-    return {"message": "Hello World"}
+    data=client.BetTest.bet.users.find_one({"_id":ObjectId(user_id)}) 
+    data['id']=str(data['_id'])
+    return UserInDb(data)
 
 @app.post("/api/v1/bet")
-async def bet():
-    #DEFINE models later on.
-    return {"message": "Hello World"}
+async def bet(betIn:BetIn,current_user:Annotated[UserInDb, Depends(get_current_user)]):
+    client.BetTest.bet.insert_one({"user_id":ObjectId(current_user.id),"date":datetime.now(),"user_id":current_user.id,"amount":betIn.amount,"with_":ObjectId(betIn.with_)})
+    return betIn
 
 @app.get("/api/v1/bets")
-async def get_bets():
+async def get_bets(current_user:Annotated[UserInDb, Depends(get_current_user)])->list[BetOut]:
     #DEFINE models later on.
-    return {"message": "Hello World"}
+    data=list(client.BetTest.bet.find())
+    print(data)
+    for bet in data:
+        bet['id']=str(bet['_id'])
+    return data
 
 @app.get("/api/v1/bets/{bet_id}")
-async def get_bet(bet_id:str):
+async def get_bet(bet_id:str,current_user:Annotated[UserInDb, Depends(get_current_user)]):
     #DEFINE models later on.
-    return {"message": "Hello World"}
-
-@app.get("/api/v1/balance")
-async def get_balance():
-    #DEFINE models later on.
-    return {"message": "Hello World"}
+    bet=client.BetTest.bet.find_one({"_id":ObjectId(bet_id)})
+    bet['id']=str(bet['_id'])
+    return bet
