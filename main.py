@@ -13,7 +13,7 @@ from bson.objectid import ObjectId
 
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1000
+ACCESS_TOKEN_EXPIRE_MINUTES = 10000000
 
 
 class LoginIn(BaseModel):
@@ -46,11 +46,11 @@ class BetIn(BaseModel):
     amount: int
     with_: str
 class BetOut(BaseModel):
-    message: str
     amount: int
     with_: str | None = None
     date: datetime
     user_id: str
+    id: str
 
 
 class Topup(BaseModel):
@@ -135,7 +135,7 @@ async def get_users(current_user:Annotated[UserInDb, Depends(get_current_user)])
     return current_user
 
 @app.get("/api/v1/users")
-async def get_users(current_user:Annotated[UserInDb, Depends(get_current_user)]):
+async def get_users(current_user:Annotated[UserInDb, Depends(get_current_user)])->list[UserInDb]:
     #DEFINE models later on.
     data=list(client.BetTest.bet.users.find())
     for user in data:
@@ -143,11 +143,11 @@ async def get_users(current_user:Annotated[UserInDb, Depends(get_current_user)])
     return data
 
 @app.get("/api/v1/users/{user_id}")
-async def get_user(user_id:str,current_user:Annotated[UserInDb, Depends(get_current_user)]):
+async def get_user(user_id:str,current_user:Annotated[UserInDb, Depends(get_current_user)])->UserInDb:
     #DEFINE models later on.
     data=client.BetTest.bet.users.find_one({"_id":ObjectId(user_id)}) 
     data['id']=str(data['_id'])
-    return UserInDb(data)
+    return data
 
 @app.post("/api/v1/bet")
 async def bet(betIn:BetIn,current_user:Annotated[UserInDb, Depends(get_current_user)]):
@@ -164,7 +164,7 @@ async def get_bets(current_user:Annotated[UserInDb, Depends(get_current_user)])-
     return data
 
 @app.get("/api/v1/bets/{bet_id}")
-async def get_bet(bet_id:str,current_user:Annotated[UserInDb, Depends(get_current_user)]):
+async def get_bet(bet_id:str,current_user:Annotated[UserInDb, Depends(get_current_user)])->BetOut:
     #DEFINE models later on.
     bet=client.BetTest.bet.find_one({"_id":ObjectId(bet_id)})
     bet['id']=str(bet['_id'])

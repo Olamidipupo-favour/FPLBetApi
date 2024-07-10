@@ -1,0 +1,5 @@
+fastapi[all]
+pymongo[srv]
+python-crontab
+pyjwt
+passlib
