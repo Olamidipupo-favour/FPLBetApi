@@ -158,6 +158,7 @@ async def get_bets(current_user:Annotated[UserInDb, Depends(get_current_user)])-
     print(data)
     for bet in data:
         bet['id']=str(bet['_id'])
+        del bet['_id']
     return data
 
 @app.get("/api/v1/bets/{bet_id}")
