@@ -106,7 +106,7 @@ async def login(user:LoginIn) -> Any:
     #DEFINE models later on.
     #push data to db
     user_=client.BetTest.bet.users.find_one({"email": user.email})
-    if(pwd_context.verify(user.password,user_["password"])):
+    if(pwd_context.verify(user.password,user_.get("password"))):
         return Token(email=user.email,token=create_access_token({"sub": user.email}))
     else:
         return {"message": "Wrong Password"},status.HTTP_401_UNAUTHORIZED
@@ -148,6 +148,8 @@ async def get_user(user_id:str,current_user:Annotated[UserInDb, Depends(get_curr
 
 @app.post("/api/v1/bet")
 async def bet(betIn:BetIn,current_user:Annotated[UserInDb, Depends(get_current_user)]):
+    if(betIn.amount>client.BetTest.bet.users.find_one({"_id":ObjectId(current_user.id)}).get("balance",0) or betIn.amount<0):
+        raise HTTPException(status_code=400, detail="Not enough balance")
     client.BetTest.bet.insert_one({"in_bet":True,"user_id":ObjectId(current_user.id),"date":datetime.now(),"user_id":current_user.id,"amount":betIn.amount,"with_":ObjectId(betIn.with_)})
     return betIn
 
