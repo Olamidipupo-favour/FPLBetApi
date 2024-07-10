@@ -168,4 +168,5 @@ async def get_bet(bet_id:str,current_user:Annotated[UserInDb, Depends(get_curren
     #DEFINE models later on.
     bet=client.BetTest.bet.find_one({"_id":ObjectId(bet_id)})
     bet['id']=str(bet['_id'])
+    bet['with_']=str(bet.get('with_'))
     return bet
