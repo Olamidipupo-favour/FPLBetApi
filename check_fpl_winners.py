@@ -10,8 +10,8 @@ COLLECTION_NAME = "bet"
 
 # MongoDB connection
 client = AsyncIOMotorClient(MONGO_URI)
-db = client[DB_NAME]
-collection = db[COLLECTION_NAME]
+db = client.BetTest
+collection = db.bet
 
 # Season start date
 season_start_date = datetime(2023, 8, 11)
@@ -47,8 +47,8 @@ async def check_fpl_winners():
         current_gameweek = get_gameweek(season_start_date, bet['date'])
         
         # Retrieve the points for both the user-id and with_
-        user = await db.users.find_one({"_id": ObjectId(user_id)})
-        with_user = await db.users.find_one({"_id": ObjectId(with_)})
+        user = await db.bet.users.find_one({"_id": ObjectId(user_id)})
+        with_user = await db.bet.users.find_one({"_id": ObjectId(with_)})
         
         fpl_user_id = user.get("fpl_id")
         fpl_with_id = with_user.get("fpl_id")
@@ -64,14 +64,14 @@ async def check_fpl_winners():
                 print("User wins the bet")
                 await collection.update_one({"_id": ObjectId(bet['_id'])}, {"$set": {"in_bet": False}})
                 #remove the amount from with_
-                await db.users.update_one({"_id": ObjectId(with_)}, {"$inc": {"balance": -bet["amount"]}})
-                await db.users.update_one({"_id": ObjectId(user_id)}, {"$inc": {"balance": bet["amount"]}})
+                await db.bet.users.update_one({"_id": ObjectId(with_)}, {"$inc": {"balance": -bet["amount"]}})
+                await db.bet.users.update_one({"_id": ObjectId(user_id)}, {"$inc": {"balance": bet["amount"]}})
             elif user_score < with_score:
                 print("With wins the bet")
                 await collection.update_one({"_id": ObjectId(bet['_id'])}, {"$set": {"in_bet": False}})
                 #remove the amount from user
-                await db.users.update_one({"_id": ObjectId(user_id)}, {"$inc": {"balance": -bet["amount"]}})
-                await db.users.update_one({"_id": ObjectId(with_)}, {"$inc": {"balance": bet["amount"]}})
+                await db.bet.users.update_one({"_id": ObjectId(user_id)}, {"$inc": {"balance": -bet["amount"]}})
+                await db.bet.users.update_one({"_id": ObjectId(with_)}, {"$inc": {"balance": bet["amount"]}})
             else:
                 print("Tie")
                 await collection.update_one({"_id": ObjectId(bet['_id'])}, {"$set": {"in_bet": False}})
