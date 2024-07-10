@@ -1,7 +1,6 @@
 from fastapi import FastAPI,Depends, HTTPException, status, Header
 from pydantic import BaseModel, EmailStr
 from typing import Any, Union, Annotated
-from crontab import CronTab
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import jwt
@@ -51,6 +50,7 @@ class BetOut(BaseModel):
     date: datetime
     user_id: str
     id: str
+    in_bet: bool | None=None
 
 
 class Topup(BaseModel):
@@ -94,9 +94,6 @@ async def get_current_user(Authorization: Annotated[str, Header()]) -> Union[Use
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI()
-cron = CronTab(user=True)
-#job = cron.new(command='python path/to/your_script.py')
-#job.minute.every(1)
 
 uri = "mongodb+srv://akinlua:propTest@cluster0.zocymky.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri, server_api=ServerApi('1'))
@@ -151,7 +148,7 @@ async def get_user(user_id:str,current_user:Annotated[UserInDb, Depends(get_curr
 
 @app.post("/api/v1/bet")
 async def bet(betIn:BetIn,current_user:Annotated[UserInDb, Depends(get_current_user)]):
-    client.BetTest.bet.insert_one({"user_id":ObjectId(current_user.id),"date":datetime.now(),"user_id":current_user.id,"amount":betIn.amount,"with_":ObjectId(betIn.with_)})
+    client.BetTest.bet.insert_one({"in_bet":True,"user_id":ObjectId(current_user.id),"date":datetime.now(),"user_id":current_user.id,"amount":betIn.amount,"with_":ObjectId(betIn.with_)})
     return betIn
 
 @app.get("/api/v1/bets")
